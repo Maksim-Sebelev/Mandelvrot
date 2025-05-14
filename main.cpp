@@ -1,0 +1,31 @@
+#include "mandelbrot/mandelbrot.hpp"
+
+#include "lib/lib.hpp"
+#ifdef _DEBUG
+#include "log/log.hpp"
+#endif // _DEBUG
+
+
+int main()
+{
+    ON_DEBUG(
+    LOG_OPEN();
+    COLOR_PRINT(GREEN, "\nMANDELBROT START\n\n");
+    )
+
+
+    WindowSize window_size =
+    {
+        .width = 800, 
+        .high  = 600
+    };
+
+    NativeMandelbrot(&window_size);
+
+    ON_DEBUG(
+    LOG_CLOSE();
+    COLOR_PRINT(GREEN, "\nMANDELBROT END\n\n");
+    )
+
+    return 0;
+}
