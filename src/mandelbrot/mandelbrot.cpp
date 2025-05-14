@@ -196,39 +196,8 @@ static RGBA GetRgbaForBadPixel(size_t bad_iteration)
 
     float tmp = ((float) bad_iteration / (float) MaxIteration) * 255;
 
+    return {tmp, tmp, tmp, 255};
     return {tmp, tmp, tmp, tmp};
-
-    // if (bad_iteration <= 1)
-    //     return {0, 0, 50, 100};
-
-    // if (bad_iteration <= 3)
-    //     return {0, 0, 100, 100};
-    
-    // if (bad_iteration <= 5)
-    //     return {0, 50, 150, 150};
-
-    // if (bad_iteration <= 8)
-    //     return {0, 100, 200, 175};
-
-    // if (bad_iteration <= 11)
-    //     return {0, 150, 212, 200};
-
-    // if (bad_iteration <= 15)
-    //     return {0, 175, 225, 212};
-        
-    // if (bad_iteration <= 20)
-    //     return {0, 200, 237, 225};
-
-    // if (bad_iteration <= 30)
-    //     return {100, 225, 250, 250};
-        
-    // if (bad_iteration <= 40)
-    //     return {200, 225, 250, 250};
-
-    // if (bad_iteration <= 55)
-    //     return {255, 0, 0, 255};
-
-    // return {255, 0, 0, 255};
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
