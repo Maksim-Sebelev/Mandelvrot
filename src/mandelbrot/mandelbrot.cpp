@@ -1,8 +1,10 @@
 #include <stddef.h>
 #include <assert.h>
+#include <limits.h>
 #include "SFML/Graphics.hpp"
 #include "mandelbrot/mandelbrot.hpp"
 #include "lib/lib.hpp"
+
 
 #ifdef _DEBUG
 #include "log/log.hpp"
@@ -10,7 +12,7 @@
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-static const size_t MaxIteration = 100;
+static const size_t MaxIteration = 64;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -24,7 +26,12 @@ using real_number_t = double;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-static const real_number_t MaxRadius = 4.0;
+static const real_number_t MaxRadiusSquare = 4.0;
+static const real_number_t Scale           = 400.0;
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// static_assert(Scale >= 0.0, "Scale must be > 0!");
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -36,11 +43,19 @@ struct ComplexNumber
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-static const ComplexNumber MandelbrotSequenceConstant = 
-{
-    .real_part      = 0.0,
-    .imaginary_part = 0.0001
-};
+// static const ComplexNumber MandelbrotSequenceConstant = 
+// {
+    // .real_part      = 0.1,
+    // .imaginary_part = 0.60001
+// };
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// static const ComplexNumber MandelbrotSequenceConstant = 
+// {
+//     .real_part      = 0.1,
+//     .imaginary_part = 0.6
+// };
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -49,10 +64,6 @@ struct PixelCoordinate
     size_t high_coordinate;
     size_t width_coordinate;
 };
-
-//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -68,17 +79,16 @@ struct RGBA
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-static void PaintPixel(sf::VertexArray& pixel, size_t pixel_index, const WindowSize* const window_size);
+static void            PaintPixel                       (sf::VertexArray& pixel, size_t pixel_index, const WindowSize* const window_size);
 static RGBA            GetPixelColor                    (const WindowSize*    const window_size, const PixelCoordinate* const pixel_coordinate);
 static ComplexNumber   ComplexNumberCtor                (const WindowSize*    const window_size, const PixelCoordinate* const pixel_coordinate);
-static ComplexNumber   GetNextMandelbrotSequenceNumber  (const ComplexNumber* const number);
+static ComplexNumber   GetNextMandelbrotSequenceNumber  (const ComplexNumber* const number,const ComplexNumber* const first_sequence_number);
 static real_number_t   GetAbsoluteValueOfComplexNumber  (const ComplexNumber* const number);
 static PixelCoordinate GetPixelCoordinate               (const WindowSize*    const window_size, size_t pixel_index);
 static RGBA            GetRgbaForBadPixel               (size_t bad_iteration);
 static RGBA            GetRgbaForGoodPixel              ();
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 
 void NativeMandelbrot(const WindowSize* const window_size)
 {
@@ -93,13 +103,11 @@ void NativeMandelbrot(const WindowSize* const window_size)
 
 
     ON_DEBUG(
-        LOG_COLOR(Red);
+    LOG_COLOR(Yellow);
     )
 
     for (size_t i = 0; i < pixels_quant; i++)
-    {
         PaintPixel(pixels, i, window_size);
-    }
 
     sf::RenderWindow window(sf::VideoMode((unsigned int) window_width, (unsigned int) window_high), "Best policarbonate: SEBELEV GROUPP.");
 
@@ -138,7 +146,7 @@ static void PaintPixel(sf::VertexArray& pixel, size_t pixel_index, const WindowS
     RGBA            pixel_color      = GetPixelColor(window_size, &pixel_coordinate);
 
     pixel[pixel_index].color    = sf::Color(pixel_color.r, pixel_color.g, pixel_color.b, pixel_color.a);
-    pixel[pixel_index].position = sf::Vector2f((float) pixel_coordinate.width_coordinate, (float) pixel_coordinate.high_coordinate);
+    pixel[pixel_index].position = sf::Vector2f((float) (pixel_coordinate.width_coordinate), (float) pixel_coordinate.high_coordinate);
 
     return;
 }
@@ -151,8 +159,8 @@ static PixelCoordinate GetPixelCoordinate(const WindowSize* const window_size, s
 
     PixelCoordinate coordinate = {};
 
-    coordinate.width_coordinate = pixel_index % window_size->width;
-    coordinate.high_coordinate = (pixel_index  - coordinate.width_coordinate) / window_size->width;
+    coordinate.width_coordinate = (pixel_index % window_size->width);
+    coordinate.high_coordinate  = (pixel_index - coordinate.width_coordinate) / window_size->width;
 
     return coordinate;
 }
@@ -164,19 +172,16 @@ static RGBA GetPixelColor(const WindowSize* const window_size, const PixelCoordi
     assert(window_size);
     assert(pixel_coordinate);
 
-    ComplexNumber number = ComplexNumberCtor(window_size, pixel_coordinate);
+    const ComplexNumber first_sequence_number = ComplexNumberCtor(window_size, pixel_coordinate);
+          ComplexNumber number                = first_sequence_number;
 
     for (size_t i = 0; i < MaxIteration; i++)
     {
-        ON_DEBUG
-        (
-        // LOG_ADC_PRINT("module = %lf\n", GetAbsoluteValueOfComplexNumber(&number));
-        )
-
-        if (GetAbsoluteValueOfComplexNumber(&number) > MaxRadius)
+       
+        if (GetAbsoluteValueOfComplexNumber(&number) > MaxRadiusSquare)
             return GetRgbaForBadPixel(i);
 
-        number = GetNextMandelbrotSequenceNumber(&number);
+        number = GetNextMandelbrotSequenceNumber(&number, &first_sequence_number);
     }
 
     return GetRgbaForGoodPixel();
@@ -186,9 +191,44 @@ static RGBA GetPixelColor(const WindowSize* const window_size, const PixelCoordi
 
 static RGBA GetRgbaForBadPixel(size_t bad_iteration)
 {
-    assert(bad_iteration >= 0);
+    assert(bad_iteration <= MaxIteration);
 
-    return {0, 0, 255, 255};
+
+    float tmp = ((float) bad_iteration / (float) MaxIteration) * 255;
+
+    return {tmp, tmp, tmp, tmp};
+
+    // if (bad_iteration <= 1)
+    //     return {0, 0, 50, 100};
+
+    // if (bad_iteration <= 3)
+    //     return {0, 0, 100, 100};
+    
+    // if (bad_iteration <= 5)
+    //     return {0, 50, 150, 150};
+
+    // if (bad_iteration <= 8)
+    //     return {0, 100, 200, 175};
+
+    // if (bad_iteration <= 11)
+    //     return {0, 150, 212, 200};
+
+    // if (bad_iteration <= 15)
+    //     return {0, 175, 225, 212};
+        
+    // if (bad_iteration <= 20)
+    //     return {0, 200, 237, 225};
+
+    // if (bad_iteration <= 30)
+    //     return {100, 225, 250, 250};
+        
+    // if (bad_iteration <= 40)
+    //     return {200, 225, 250, 250};
+
+    // if (bad_iteration <= 55)
+    //     return {255, 0, 0, 255};
+
+    // return {255, 0, 0, 255};
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -204,10 +244,16 @@ static ComplexNumber ComplexNumberCtor(const WindowSize* const window_size, cons
 {
     ComplexNumber number = 
     {
-        .real_part      = (real_number_t) (pixel_coordinate->width_coordinate - window_size->width / 2) / 300,
-        .imaginary_part = (real_number_t) (pixel_coordinate->high_coordinate  - window_size->high  / 2) / 300
+        .real_part      = (((real_number_t) pixel_coordinate->width_coordinate) - ((real_number_t) window_size->width / 2  + 200.0)) / Scale,
+        .imaginary_part = (((real_number_t) pixel_coordinate->high_coordinate ) - ((real_number_t) window_size->high  / 2         )) / Scale
     };
 
+    
+    ON_DEBUG(
+    size_t index = pixel_coordinate->high_coordinate * window_size->width + pixel_coordinate->width_coordinate;
+    if (index < 1000)
+        LOG_ADC_PRINT("number = \n{\n\tindex = %lu\n\tre = %lf\n\tim = %lf\n}\n\n", index, number.real_part, number.imaginary_part);
+    )
     return number;
 }
 
@@ -227,7 +273,7 @@ static real_number_t GetAbsoluteValueOfComplexNumber(const ComplexNumber* const 
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-static ComplexNumber GetNextMandelbrotSequenceNumber(const ComplexNumber* const number)
+static ComplexNumber GetNextMandelbrotSequenceNumber(const ComplexNumber* const number, const ComplexNumber* const first_sequence_elem)
 {
     assert(number);
 
@@ -236,8 +282,8 @@ static ComplexNumber GetNextMandelbrotSequenceNumber(const ComplexNumber* const 
 
     ComplexNumber next_number    = {};
 
-    next_number.real_part        = (real_part * real_part) - (imaginary_part * imaginary_part) + MandelbrotSequenceConstant.real_part;
-    next_number.imaginary_part   = (2 * real_part * imaginary_part)                            + MandelbrotSequenceConstant.imaginary_part;
+    next_number.real_part        = (real_part * real_part) - (imaginary_part * imaginary_part) + first_sequence_elem->real_part;
+    next_number.imaginary_part   = (2 * real_part * imaginary_part)                            + first_sequence_elem->imaginary_part;
 
     return next_number;
 }

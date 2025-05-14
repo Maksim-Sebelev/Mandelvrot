@@ -8,8 +8,8 @@ SFML_FLAGS = -lsfml-graphics -lsfml-window -lsfml-system
 CFLAGS ?= 
 LDFLAGS = $(SFML_FLAGS)
 
-BUILD_TYPE ?= debug
-# BUILD_TYPE ?= release
+# BUILD_TYPE ?= debug
+BUILD_TYPE ?= release
 
 
 ifeq ($(BUILD_TYPE), release)
@@ -42,12 +42,7 @@ EXECUTABLE_DIR ?= build
 COMMONINC = -I./include
 SRC = ./src
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-EXECUTABLE ?= processor
-ASM_DIR  ?=
-CODE_DIR ?=
-ASM_FILE ?= programm.asm
-BIN_FILE ?= code.bin
-EXAMPLE_DIR = examples
+EXECUTABLE ?= nasrimnevrot
 
 -include local.mk
 

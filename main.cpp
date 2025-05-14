@@ -16,8 +16,8 @@ int main()
 
     WindowSize window_size =
     {
-        .width = 800, 
-        .high  = 600
+        .width = 1500, 
+        .high  = 1000
     };
 
     NativeMandelbrot(&window_size);

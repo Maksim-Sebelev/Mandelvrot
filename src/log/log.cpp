@@ -15,7 +15,7 @@ FILE*       LogFile = nullptr;
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ON_IMG(
-const char* background_image = "../src/log/backgrounds/anime_tyan_main.jpg";
+const char* background_image = "../src/log/backgrounds/anime_tyan_2.webp";
 )
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -661,6 +661,9 @@ static void makeColorP(size_t nTabBefore)
 
 static void fprintfInHtml(const char* format, ...)
 {
+    assert(LogFile);
+    assert(format);
+
     va_list args;
     va_start(args, format);
 
