@@ -14,10 +14,13 @@ int main()
     )
 
 
-    WindowSize window_size =
+    WindowBorder window_size =
     {
-        .width = 1500, 
-        .high  = 1000
+        .width_begin = 0   ,
+        .width_end   = 1500, 
+        .high_begin  = 0   ,
+        .high_end    = 1000,
+
     };
 
     NativeMandelbrot(&window_size);

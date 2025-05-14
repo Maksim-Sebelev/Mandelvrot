@@ -27,11 +27,10 @@ using real_number_t = double;
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 static const real_number_t MaxRadiusSquare = 4.0;
-static const real_number_t Scale           = 400.0;
+static real_number_t Scale           = 400.0;
+static real_number_t HighOffset      = 0.0;
+static real_number_t WidthOffset     = 0.0;
 
-//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-// static_assert(Scale >= 0.0, "Scale must be > 0!");
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -43,26 +42,10 @@ struct ComplexNumber
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-// static const ComplexNumber MandelbrotSequenceConstant = 
-// {
-    // .real_part      = 0.1,
-    // .imaginary_part = 0.60001
-// };
-
-//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-// static const ComplexNumber MandelbrotSequenceConstant = 
-// {
-//     .real_part      = 0.1,
-//     .imaginary_part = 0.6
-// };
-
-//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 struct PixelCoordinate
 {
-    size_t high_coordinate;
-    size_t width_coordinate;
+    long long high_coordinate;
+    long long width_coordinate;
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -79,54 +62,122 @@ struct RGBA
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-static void            PaintPixel                       (sf::VertexArray& pixel, size_t pixel_index, const WindowSize* const window_size);
-static RGBA            GetPixelColor                    (const WindowSize*    const window_size, const PixelCoordinate* const pixel_coordinate);
-static ComplexNumber   ComplexNumberCtor                (const WindowSize*    const window_size, const PixelCoordinate* const pixel_coordinate);
+static void            PaintPixel                       (sf::VertexArray& pixel, size_t pixel_index, const WindowBorder* const window_border);
+static RGBA            GetPixelColor                    (const WindowBorder*    const window_border, const PixelCoordinate* const pixel_coordinate);
+static ComplexNumber   ComplexNumberCtor                (const WindowBorder*    const window_border, const PixelCoordinate* const pixel_coordinate);
 static ComplexNumber   GetNextMandelbrotSequenceNumber  (const ComplexNumber* const number,const ComplexNumber* const first_sequence_number);
 static real_number_t   GetAbsoluteValueOfComplexNumber  (const ComplexNumber* const number);
-static PixelCoordinate GetPixelCoordinate               (const WindowSize*    const window_size, size_t pixel_index);
+static PixelCoordinate GetPixelCoordinate               (const WindowBorder*    const window_border, size_t pixel_index);
 static RGBA            GetRgbaForBadPixel               (size_t bad_iteration);
 static RGBA            GetRgbaForGoodPixel              ();
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-void NativeMandelbrot(const WindowSize* const window_size)
+void NativeMandelbrot(WindowBorder* window_border)
 {
-    assert(window_size);
+    assert(window_border);
 
-    const size_t window_width = window_size->width;
-    const size_t window_high  = window_size->high;
+    const size_t window_width = window_border->width_end;
+    const size_t window_high  = window_border->high_end;
 
     const size_t pixels_quant = window_high * window_width;
 
     sf::VertexArray pixels(sf::PrimitiveType::Points, pixels_quant);    
-
 
     ON_DEBUG(
     LOG_COLOR(Yellow);
     )
 
     for (size_t i = 0; i < pixels_quant; i++)
-        PaintPixel(pixels, i, window_size);
+        PaintPixel(pixels, i, window_border);
 
     sf::RenderWindow window(sf::VideoMode((unsigned int) window_width, (unsigned int) window_high), "Best policarbonate: SEBELEV GROUPP.");
 
     window.draw(pixels);
     window.display(); 
 
-    while (window.isOpen())
+    sf::View view = window.getDefaultView();
+
+    while (window.isOpen()) 
     {
         sf::Event event = {};
-    
+
         while (window.pollEvent(event))
         {
-            if (event.type == sf::Event::KeyPressed)
-                if (event.key.code == sf::Keyboard::Space)
-                    window.close();
-
             if (event.type == sf::Event::Closed)
                 window.close();
         }
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+        {
+            Scale *= 1.2;
+    
+            // size_t offset_w = ((window_border->width_end - window_border->width_begin) / 2);
+            // size_t offset_h = ((window_border->high_end - window_border->high_begin)   / 2);
+            
+            // window_border->high_begin += offset_h;
+            // window_border->high_end   -= offset_h;
+
+            // window_border->width_begin += offset_w;
+            // window_border->width_end   -= offset_w;
+        }
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+        {
+            Scale /= 1.2;
+            // size_t offset_w = ((window_border->width_end - window_border->width_begin) / 2);
+            // size_t offset_h = ((window_border->high_end - window_border->high_begin)   / 2);
+
+            // window_border->high_begin -= offset_h;
+            // window_border->high_end   += offset_h;
+
+            // window_border->width_begin -= offset_w;
+            // window_border->width_end   += offset_w;
+        }
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+        {
+            HighOffset -= 10;
+            window_border->high_begin -= 10;
+            window_border->high_end   -= 10;
+        }
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+        {
+            HighOffset += 10;
+            window_border->high_begin += 10;
+            window_border->high_end   += 10;
+        }
+    
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+        {
+            WidthOffset -= 10;
+            window_border->width_begin -= 10;
+            window_border->width_end   -= 10;
+        }
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+        {
+            WidthOffset += 10;
+            window_border->width_begin += 10;
+            window_border->width_end   += 10;
+        }
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+        {
+            window.close();
+        }
+
+        
+        for (size_t w = window_border->width_begin; w < window_border->width_end; w++)
+            for (size_t h = window_border->high_begin; h < window_border->high_end; h++)
+                PaintPixel(pixels, w * (window_border->width_end - window_border->width_begin) + h, window_border);
+
+        window.setView(view);
+
+        window.clear();
+        window.draw(pixels);
+        window.display();
     }
     
     pixels.clear();
@@ -137,13 +188,13 @@ void NativeMandelbrot(const WindowSize* const window_size)
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-static void PaintPixel(sf::VertexArray& pixel, size_t pixel_index, const WindowSize* const window_size)
+static void PaintPixel(sf::VertexArray& pixel, size_t pixel_index, const WindowBorder* const window_border)
 {
     assert(&pixel);
-    assert(window_size);
+    assert(window_border);
 
-    PixelCoordinate pixel_coordinate = GetPixelCoordinate(window_size, pixel_index);
-    RGBA            pixel_color      = GetPixelColor(window_size, &pixel_coordinate);
+    PixelCoordinate pixel_coordinate = GetPixelCoordinate(window_border, pixel_index);
+    RGBA            pixel_color      = GetPixelColor(window_border, &pixel_coordinate);
 
     pixel[pixel_index].color    = sf::Color(pixel_color.r, pixel_color.g, pixel_color.b, pixel_color.a);
     pixel[pixel_index].position = sf::Vector2f((float) (pixel_coordinate.width_coordinate), (float) pixel_coordinate.high_coordinate);
@@ -153,26 +204,26 @@ static void PaintPixel(sf::VertexArray& pixel, size_t pixel_index, const WindowS
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-static PixelCoordinate GetPixelCoordinate(const WindowSize* const window_size, size_t pixel_index)
+static PixelCoordinate GetPixelCoordinate(const WindowBorder* const window_border, size_t pixel_index)
 {
-    assert(window_size);
+    assert(window_border);
 
     PixelCoordinate coordinate = {};
 
-    coordinate.width_coordinate = (pixel_index % window_size->width);
-    coordinate.high_coordinate  = (pixel_index - coordinate.width_coordinate) / window_size->width;
+    coordinate.width_coordinate = (pixel_index % window_border->width_end);
+    coordinate.high_coordinate  = (pixel_index - coordinate.width_coordinate) / window_border->width_end;
 
     return coordinate;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-static RGBA GetPixelColor(const WindowSize* const window_size, const PixelCoordinate* const pixel_coordinate)
+static RGBA GetPixelColor(const WindowBorder* const window_border, const PixelCoordinate* const pixel_coordinate)
 {
-    assert(window_size);
+    assert(window_border);
     assert(pixel_coordinate);
 
-    const ComplexNumber first_sequence_number = ComplexNumberCtor(window_size, pixel_coordinate);
+    const ComplexNumber first_sequence_number = ComplexNumberCtor(window_border, pixel_coordinate);
           ComplexNumber number                = first_sequence_number;
 
     for (size_t i = 0; i < MaxIteration; i++)
@@ -194,10 +245,10 @@ static RGBA GetRgbaForBadPixel(size_t bad_iteration)
     assert(bad_iteration <= MaxIteration);
 
 
-    float tmp = ((float) bad_iteration / (float) MaxIteration) * 255;
+    unsigned char color = ((float) bad_iteration / (float) MaxIteration) * 255;
 
-    return {tmp, tmp, tmp, 255};
-    return {tmp, tmp, tmp, tmp};
+    return {color, color, color, 255};
+    return {color, color, color, color};
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -209,17 +260,16 @@ static RGBA GetRgbaForGoodPixel()
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-static ComplexNumber ComplexNumberCtor(const WindowSize* const window_size, const PixelCoordinate* const pixel_coordinate)
+static ComplexNumber ComplexNumberCtor(const WindowBorder* const window_border, const PixelCoordinate* const pixel_coordinate)
 {
     ComplexNumber number = 
     {
-        .real_part      = (((real_number_t) pixel_coordinate->width_coordinate) - ((real_number_t) window_size->width / 2  + 200.0)) / Scale,
-        .imaginary_part = (((real_number_t) pixel_coordinate->high_coordinate ) - ((real_number_t) window_size->high  / 2         )) / Scale
+        .real_part      = (((real_number_t) pixel_coordinate->width_coordinate) - ((real_number_t) (window_border->width_end - window_border->width_begin) / 2  - WidthOffset + 200.0)) / Scale,
+        .imaginary_part = (((real_number_t) pixel_coordinate->high_coordinate ) - ((real_number_t) (window_border->high_end  - window_border->high_begin ) / 2  - HighOffset         )) / Scale
     };
 
-    
     ON_DEBUG(
-    size_t index = pixel_coordinate->high_coordinate * window_size->width + pixel_coordinate->width_coordinate;
+    size_t index = pixel_coordinate->high_coordinate * window_border->width + pixel_coordinate->width_coordinate;
     if (index < 1000)
         LOG_ADC_PRINT("number = \n{\n\tindex = %lu\n\tre = %lf\n\tim = %lf\n}\n\n", index, number.real_part, number.imaginary_part);
     )
