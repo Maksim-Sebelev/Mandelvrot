@@ -88,25 +88,7 @@ struct RGBA
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-
-static void               UpdateWindowOffset               (WindofOffset* window_offset, const WindowMovementInfo* const window_movement);
-static void               PaintPixel                       (sf::VertexArray& pixel, size_t pixel_index, const WindowParametrs* const window_parametrs);
-static void               MakePixelsArray                  (sf::VertexArray& pixels, const WindowParametrs* const window_parametrs, size_t pixels_quant);
-static void               CloseWindowIfNeed                (sf::RenderWindow* window, sf::Event* event);
-static void               DrawPixelsArrayOnWindow          (sf::RenderWindow* window, sf::VertexArray& pixels);
-static void               UpadteSFMLWindow                 (sf::RenderWindow* window, sf::View* view, sf::VertexArray& pixels);
-static void               SFMLDtor                         (sf::RenderWindow* window, sf::VertexArray& pixels);
-static RGBA               GetPixelColor                    (const WindowParametrs* const window_parametrs, const PixelCoordinate* const pixel_coordinate);
-static ComplexNumber      ComplexNumberCtor                (const WindowParametrs* const window_parametrs, const PixelCoordinate* const pixel_coordinate);
-static PixelCoordinate    GetPixelCoordinate               (const WindowParametrs* const window_parametrs, size_t pixel_index);
-static ComplexNumber      GetNextMandelbrotSequenceNumber  (const ComplexNumber*   const number, const ComplexNumber* const first_sequence_number);
-static size_t             GetPixelsQuant                   (const WindowSize* const window_size);
-static WindowParametrs    WindowParametrsCtor              (const WindowSize* const window_size);
-static real_number_t      GetScale                         (const WindowSize* const window_size);
-static WindowMovementInfo WindowMovementCtor               ();
-static real_number_t      GetAbsoluteValueOfComplexNumber  (const ComplexNumber*   const number);
-static RGBA               GetRgbaForBadPixel               (size_t bad_iteration);
-static RGBA               GetRgbaForGoodPixel              ();
+static RGBA GetPixelColor (const WindowParametrs* const window_parametrs, const PixelCoordinate* const pixel_coordinate);
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
