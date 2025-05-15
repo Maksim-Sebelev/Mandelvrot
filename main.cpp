@@ -5,6 +5,7 @@
 #include "log/log.hpp"
 #endif // _DEBUG
 
+#include <assert.h>
 
 int main()
 {
@@ -13,14 +14,10 @@ int main()
     COLOR_PRINT(GREEN, "\nMANDELBROT START\n\n");
     )
 
-
-    WindowBorder window_size =
+    WindowSize window_size =
     {
-        .width_begin = 0   ,
-        .width_end   = 1500, 
-        .high_begin  = 0   ,
-        .high_end    = 1000,
-
+        .width = 1500, 
+        .high  = 1000,
     };
 
     NativeMandelbrot(&window_size);

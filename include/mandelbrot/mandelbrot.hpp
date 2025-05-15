@@ -5,17 +5,14 @@
 #include <stddef.h>
 
 
-struct WindowBorder
+struct WindowSize
 {
-    long long width_begin;
-    long long width_end;
-
-    long long high_begin;
-    long long high_end;
+    size_t width;
+    size_t high;
 };
 
 
-void NativeMandelbrot(WindowBorder* window_size);
+void NativeMandelbrot(const WindowSize* const window_size);
 
 
 #endif // __MANDELBROT_HPP__
