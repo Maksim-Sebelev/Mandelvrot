@@ -50,6 +50,7 @@ override CFLAGS += $(COMMONINC)
 
 CSRC =  main.cpp 					        \
 		src/lib/lib.cpp  			         \
+		src/mandelbrot/mandelbrot_global_functions.cpp \
 		src/mandelbrot/mandelbrot_native.cpp  \
 
 

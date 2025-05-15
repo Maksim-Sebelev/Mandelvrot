@@ -20,7 +20,8 @@ int main()
         .high  = 1000,
     };
 
-    NativeMandelbrot(&window_size);
+    DrawMandeltbrote(&window_size, GetPixelColorNative);
+
 
     ON_DEBUG(
     LOG_CLOSE();
