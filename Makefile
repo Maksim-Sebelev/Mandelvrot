@@ -48,9 +48,9 @@ EXECUTABLE ?= nasrimnevrot
 
 override CFLAGS += $(COMMONINC)
 
-CSRC =  main.cpp 					 \
-		src/lib/lib.cpp  			  \
-		src/mandelbrot/mandelbrot.cpp  \
+CSRC =  main.cpp 					        \
+		src/lib/lib.cpp  			         \
+		src/mandelbrot/mandelbrot_native.cpp  \
 
 
 ifeq ($(BUILD_TYPE), debug)

@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <assert.h>
 #include <limits.h>
+#include <math.h>
 #include "SFML/Graphics.hpp"
 #include "mandelbrot/mandelbrot.hpp"
 #include "lib/lib.hpp"
@@ -66,6 +67,15 @@ struct PixelCoordinate
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+struct WindowMovementInfo
+{
+    real_number_t zoom_speed;
+    real_number_t move_speed;
+};
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 struct RGBA
 {
     unsigned char r;
@@ -79,22 +89,24 @@ struct RGBA
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-static void            UpdateWindowOffset               (WindofOffset* window_offset);
-static void            PaintPixel                       (sf::VertexArray& pixel, size_t pixel_index, const WindowParametrs* const window_parametrs);
-static void            MakePixelsArray                  (sf::VertexArray& pixels, const WindowParametrs* const window_parametrs, size_t pixels_quant);
-static void            CloseWindowIfNeed                (sf::RenderWindow* window, sf::Event* event);
-static void            DrawPixelsArrayOnWindow          (sf::RenderWindow* window, sf::VertexArray& pixels);
-static void            UpadteSFMLWindow                 (sf::RenderWindow* window, sf::View* view, sf::VertexArray& pixels);
-static void            SFMLDtor                         (sf::RenderWindow* window, sf::VertexArray& pixels);
-static RGBA            GetPixelColor                    (const WindowParametrs* const window_parametrs, const PixelCoordinate* const pixel_coordinate);
-static ComplexNumber   ComplexNumberCtor                (const WindowParametrs* const window_parametrs, const PixelCoordinate* const pixel_coordinate);
-static PixelCoordinate GetPixelCoordinate               (const WindowParametrs* const window_parametrs, size_t pixel_index);
-static ComplexNumber   GetNextMandelbrotSequenceNumber  (const ComplexNumber*   const number, const ComplexNumber* const first_sequence_number);
-static size_t          GetPixelsQuant                   (const WindowSize* const window_size);
-static WindowParametrs WindowParametrsCtor              (const WindowSize* const window_size, real_number_t scale);
-static real_number_t   GetAbsoluteValueOfComplexNumber  (const ComplexNumber*   const number);
-static RGBA            GetRgbaForBadPixel               (size_t bad_iteration);
-static RGBA            GetRgbaForGoodPixel              ();
+static void               UpdateWindowOffset               (WindofOffset* window_offset, const WindowMovementInfo* const window_movement);
+static void               PaintPixel                       (sf::VertexArray& pixel, size_t pixel_index, const WindowParametrs* const window_parametrs);
+static void               MakePixelsArray                  (sf::VertexArray& pixels, const WindowParametrs* const window_parametrs, size_t pixels_quant);
+static void               CloseWindowIfNeed                (sf::RenderWindow* window, sf::Event* event);
+static void               DrawPixelsArrayOnWindow          (sf::RenderWindow* window, sf::VertexArray& pixels);
+static void               UpadteSFMLWindow                 (sf::RenderWindow* window, sf::View* view, sf::VertexArray& pixels);
+static void               SFMLDtor                         (sf::RenderWindow* window, sf::VertexArray& pixels);
+static RGBA               GetPixelColor                    (const WindowParametrs* const window_parametrs, const PixelCoordinate* const pixel_coordinate);
+static ComplexNumber      ComplexNumberCtor                (const WindowParametrs* const window_parametrs, const PixelCoordinate* const pixel_coordinate);
+static PixelCoordinate    GetPixelCoordinate               (const WindowParametrs* const window_parametrs, size_t pixel_index);
+static ComplexNumber      GetNextMandelbrotSequenceNumber  (const ComplexNumber*   const number, const ComplexNumber* const first_sequence_number);
+static size_t             GetPixelsQuant                   (const WindowSize* const window_size);
+static WindowParametrs    WindowParametrsCtor              (const WindowSize* const window_size);
+static real_number_t      GetScale                         (const WindowSize* const window_size);
+static WindowMovementInfo WindowMovementCtor               ();
+static real_number_t      GetAbsoluteValueOfComplexNumber  (const ComplexNumber*   const number);
+static RGBA               GetRgbaForBadPixel               (size_t bad_iteration);
+static RGBA               GetRgbaForGoodPixel              ();
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -102,8 +114,9 @@ void NativeMandelbrot(const WindowSize* const window_size)
 {
     assert(window_size);
 
-    WindowParametrs window_parametrs = WindowParametrsCtor(window_size, 200.0);
-    size_t          pixels_quant     = GetPixelsQuant     (window_size       );
+    WindowParametrs    window_parametrs = WindowParametrsCtor(window_size);
+    WindowMovementInfo window_movement  = WindowMovementCtor();
+    size_t             pixels_quant     = GetPixelsQuant     (window_size);
 
     sf::VertexArray pixels(sf::PrimitiveType::Points, pixels_quant);
     MakePixelsArray(pixels, &window_parametrs, pixels_quant);
@@ -111,15 +124,17 @@ void NativeMandelbrot(const WindowSize* const window_size)
     sf::RenderWindow window(sf::VideoMode((unsigned int) window_size->width, (unsigned int) window_size->high), "Best policarbonate: SEBELEV GROUPP.");
     DrawPixelsArrayOnWindow(&window, pixels);
 
+
     sf::View  view  = window.getDefaultView();    
     sf::Event event = {};
 
+
     while (window.isOpen()) 
     {
-        CloseWindowIfNeed  (&window,                        &event                         );
-        UpdateWindowOffset (&window_parametrs.window_offset                                );
-        MakePixelsArray    (pixels,                         &window_parametrs, pixels_quant);
-        UpadteSFMLWindow   (&window,                        &view,             pixels      );
+        CloseWindowIfNeed  (&window,                         &event                         );
+        UpdateWindowOffset (&window_parametrs.window_offset, &window_movement               );
+        MakePixelsArray    (pixels,                          &window_parametrs, pixels_quant);
+        UpadteSFMLWindow   (&window,                         &view,             pixels      );
     }
     
     SFMLDtor(&window, pixels);
@@ -138,8 +153,10 @@ static size_t GetPixelsQuant(const WindowSize* const window_size)
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-static WindowParametrs WindowParametrsCtor(const WindowSize* const window_size, real_number_t scale)
+static WindowParametrs WindowParametrsCtor(const WindowSize* const window_size)
 {
+    assert(window_size);
+
     WindowParametrs window_parametrs            = {};
 
     window_parametrs.window_size.width          = window_size->width;
@@ -147,9 +164,30 @@ static WindowParametrs WindowParametrsCtor(const WindowSize* const window_size, 
 
     window_parametrs.window_offset.high_offset  = 0;
     window_parametrs.window_offset.width_offset = 0;
-    window_parametrs.window_offset.scale        = scale;
+    window_parametrs.window_offset.scale        = GetScale(window_size);
 
     return window_parametrs;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+static real_number_t GetScale(const WindowSize* const window_size)
+{
+    assert(window_size);
+
+    const size_t width = window_size->width;
+    const size_t high  = window_size->high;
+
+    return (real_number_t) sqrt(width * high) / 3.0;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+static WindowMovementInfo WindowMovementCtor()
+{
+    const real_number_t move_speed = 20.0;
+    const real_number_t zoom_speed = 1.5;
+    return {zoom_speed, move_speed};
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -214,12 +252,13 @@ static void DrawPixelsArrayOnWindow(sf::RenderWindow* window, sf::VertexArray& p
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-static void UpdateWindowOffset(WindofOffset* window_offset)
+static void UpdateWindowOffset(WindofOffset* window_offset, const WindowMovementInfo* const window_movement)
 {
     assert(window_offset);
 
-    real_number_t move_speed = 25.0;
-    real_number_t zoom_speed = 1.5;
+
+    const real_number_t move_speed =  window_movement->move_speed;
+    const real_number_t zoom_speed =  window_movement->zoom_speed;
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
     {
