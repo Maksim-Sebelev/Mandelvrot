@@ -97,9 +97,25 @@ void CalcFps(FPS* fps)
 
 FPS FpsCtor()
 {
-    FPS fps             = {};
+    sf::Font font = {};
 
-    fps.fps_text        = FpsTextCtor();
+    const bool find_font_flag = font.loadFromFile("/usr/share/fonts/truetype/fonts-japanese-mincho.ttf");
+
+    if (!find_font_flag)
+        EXIT(EXIT_FAILURE, "fonts don't find");
+        
+        // fps.fps_text        = FpsTextCtor();
+        
+        sf::Text fps_text = {};
+        
+        fps_text.setFont(font);
+        fps_text.setCharacterSize(20);
+        fps_text.setFillColor(sf::Color::Green);
+        fps_text.setPosition(10, 10);
+        
+        
+    FPS fps             = {};
+    fps.fps_text = fps_text;
     fps.fps_clock       = {};
     fps.frame_count     = 0;
     fps.fps_update_time = 0.5;
