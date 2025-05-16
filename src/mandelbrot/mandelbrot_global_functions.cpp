@@ -1,3 +1,5 @@
+#include <sstream>
+#include <iomanip>
 #include <stddef.h>
 #include <SFML/Graphics.hpp>
 #include <math.h>
@@ -19,7 +21,7 @@ void DrawMandeltbrote(const WindowSize* const window_size, RGBA GetPixelColor(co
     assert(GetPixelColor);
 
     WindowParametrs    window_parametrs = WindowParametrsCtor(window_size);
-    WindowMovementInfo window_movement  = WindowMovementCtor();
+    WindowMovementInfo window_movement  = WindowMovementCtor (           );
     size_t             pixels_quant     = GetPixelsQuant     (window_size);
 
     sf::VertexArray pixels(sf::PrimitiveType::Points, pixels_quant);
@@ -27,8 +29,12 @@ void DrawMandeltbrote(const WindowSize* const window_size, RGBA GetPixelColor(co
 
     sf::RenderWindow window(sf::VideoMode((unsigned int) window_size->width, (unsigned int) window_size->high), "Best policarbonate: SEBELEV GROUPP.");
     DrawPixelsArrayOnWindow(&window, pixels);
+    
+    window.setFramerateLimit(0);
+    
+    
+    FPS fps = FpsCtor();
 
-    sf::View  view  = window.getDefaultView();    
     sf::Event event = {};
 
     while (window.isOpen()) 
@@ -36,7 +42,8 @@ void DrawMandeltbrote(const WindowSize* const window_size, RGBA GetPixelColor(co
         CloseWindowIfNeed  (&window,                         &event                                        );
         UpdateWindowOffset (&window_parametrs.window_offset, &window_movement                              );
         MakePixelsArray    (pixels,                          &window_parametrs, pixels_quant, GetPixelColor);
-        UpadteSFMLWindow   (&window,                         &view,             pixels                     );
+        CalcFps            (&fps                                                                           );    
+        UpadteSFMLWindow   (&window,                         pixels,           &fps                        );
     }
 
     SFMLDtor(&window, pixels);
@@ -60,6 +67,65 @@ WindowParametrs WindowParametrsCtor(const WindowSize* const window_size)
     window_parametrs.window_offset.scale        = GetScale(window_size);
 
     return window_parametrs;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void CalcFps(FPS* fps)
+{
+    assert(fps);
+
+    fps->frame_count++;
+
+    float currentTime = fps->fps_clock.getElapsedTime().asSeconds();
+
+    if (currentTime >= fps->fps_update_time)
+    {
+        fps->fps         = (float) fps->frame_count / currentTime;
+        fps->frame_count = 0;
+        fps->fps_clock.restart();
+
+        std::ostringstream ss = {};
+        ss << "FPS: " << std::fixed << std::setprecision(1) << fps->fps;
+        (fps->fps_text).setString(ss.str());
+    }
+
+    return;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+FPS FpsCtor()
+{
+    FPS fps             = {};
+
+    fps.fps_text        = FpsTextCtor();
+    fps.fps_clock       = {};
+    fps.frame_count     = 0;
+    fps.fps_update_time = 0.5;
+
+    return fps;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+sf::Text FpsTextCtor()
+{
+    sf::Font font = {};
+
+    const bool find_font_flag = font.loadFromFile("/usr/share/fonts/truetype/fonts-japanese-mincho.ttf");
+
+    if (!find_font_flag)
+        EXIT(EXIT_FAILURE, "fonts don't find");
+
+    sf::Text fps_text = {};
+
+    fps_text.setFont(font);
+    fps_text.setCharacterSize(20);
+    fps_text.setFillColor(sf::Color::Green);
+    fps_text.setPosition(10, 10);
+
+    return fps_text;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -116,16 +182,17 @@ void SFMLDtor(sf::RenderWindow* window, sf::VertexArray& pixels)
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-void UpadteSFMLWindow(sf::RenderWindow* window, sf::View* view, sf::VertexArray& pixels)
+void UpadteSFMLWindow(sf::RenderWindow* window, sf::VertexArray& pixels, const FPS* const fps)
 {
     assert(&pixels);
-    assert(&window);
-    assert(&view);
+    assert(window);
+    assert(fps);
 
-    window->setView(*view);
+    sf::Text text = fps->fps_text;
 
     window->clear();
     window->draw(pixels);
+    window->draw(text);
     window->display();
 
     return;
@@ -244,15 +311,22 @@ RGBA GetRgbaForBadPixel(size_t bad_iteration)
 
     unsigned char color = (unsigned char) (((float) bad_iteration / (float) MaxIteration) * 255.0);
 
-    return {0, color, color, 255};
-    // return {color, color, color, color};
+    return {color, 0, color, color};
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 RGBA GetRgbaForGoodPixel()
 {
-    return {100, 0, 0, 255};
+    return {0, 0, 0, 0};
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+RGBA GetRgbaForCenterPixel()
+{
+    return {255, 0, 0, 255};
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -297,6 +371,27 @@ ComplexNumber GetNextMandelbrotSequenceNumber(const ComplexNumber* const number,
     next_number.imaginary_part   = (2 * real_part * imaginary_part)                            + first_sequence_elem->imaginary_part;
 
     return next_number;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+bool IsRealNumbersEqual(real_number_t first_num, real_number_t second_num)
+{
+
+    real_number_t nums_diff = first_num - second_num;
+    return  (-0.1 < nums_diff      ) &&
+            (       nums_diff < 0.1);
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+bool IsPixelCenter(const PixelCoordinate* const pixel_coordinate, const WindowSize* const window_size)
+{
+    assert(pixel_coordinate);
+    assert(window_size);
+
+    return  (pixel_coordinate->high_coordinate  == window_size->high  / 2) &&
+            (pixel_coordinate->width_coordinate == window_size->width / 2);    
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

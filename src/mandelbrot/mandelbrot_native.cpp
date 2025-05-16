@@ -19,8 +19,11 @@ RGBA GetPixelColorNative(const WindowParametrs* const window_parametrs, const Pi
     assert(window_parametrs);
     assert(pixel_coordinate);
 
+    if (IsPixelCenter(pixel_coordinate, &window_parametrs->window_size))
+        return GetRgbaForCenterPixel();
+
     const ComplexNumber first_sequence_number = ComplexNumberCtor(window_parametrs, pixel_coordinate);
-    ComplexNumber number                = first_sequence_number;
+          ComplexNumber number                = first_sequence_number;
 
     for (size_t i = 0; i < MaxIteration; i++)
     {
@@ -41,7 +44,12 @@ static const size_t N = 4;
 
 RGBA GetNPixelColor(const WindowParametrs* const window_parametrs, const PixelCoordinate* const pixel_coordinate)
 {
+    assert(window_parametrs);
+    assert(pixel_coordinate);
 
+    
+
+    return GetRgbaForGoodPixel();    
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

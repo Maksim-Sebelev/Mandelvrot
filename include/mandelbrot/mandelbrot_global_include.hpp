@@ -23,6 +23,16 @@ struct WindowMovementInfo
     real_number_t move_speed;
 };
 
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+struct FPS
+{
+    float     fps;
+    int       frame_count;
+    float     fps_update_time;
+    sf::Text  fps_text;
+    sf::Clock fps_clock;
+};
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -31,7 +41,7 @@ void               PaintPixel                       (sf::VertexArray& pixel, siz
 void               MakePixelsArray                  (sf::VertexArray& pixels, const WindowParametrs* const window_parametrs, size_t pixels_quant, RGBA GetPixelColorconst(const WindowParametrs* const , const PixelCoordinate* const));
 void               CloseWindowIfNeed                (sf::RenderWindow* window, sf::Event* event);
 void               DrawPixelsArrayOnWindow          (sf::RenderWindow* window, sf::VertexArray& pixels);
-void               UpadteSFMLWindow                 (sf::RenderWindow* window, sf::View* view, sf::VertexArray& pixels);
+void               UpadteSFMLWindow                 (sf::RenderWindow* window, sf::VertexArray& pixels, const FPS* const fps);
 void               SFMLDtor                         (sf::RenderWindow* window, sf::VertexArray& pixels);
 ComplexNumber      ComplexNumberCtor                (const WindowParametrs* const window_parametrs, const PixelCoordinate* const pixel_coordinate);
 PixelCoordinate    GetPixelCoordinate               (const WindowSize*      const window_size, size_t pixel_index);
@@ -43,5 +53,11 @@ WindowMovementInfo WindowMovementCtor               ();
 real_number_t      GetAbsoluteValueOfComplexNumber  (const ComplexNumber*   const number);
 RGBA               GetRgbaForBadPixel               (size_t bad_iteration);
 RGBA               GetRgbaForGoodPixel              ();
+RGBA               GetRgbaForCenterPixel            ();
+bool               IsRealNumbersEqual               (real_number_t first_num, real_number_t second_num);
+bool               IsPixelCenter                    (const PixelCoordinate* const pixel_coordinate, const WindowSize* const window_size);
+void               CalcFps                          (FPS* fps);
+FPS                FpsCtor                          ();
+sf::Text           FpsTextCtor                      ();
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
